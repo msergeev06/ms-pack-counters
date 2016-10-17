@@ -5,6 +5,7 @@ namespace MSergeev\Packages\Counters\Lib;
 use MSergeev\Core\Entity\Query;
 use MSergeev\Core\Lib\DateHelper;
 use MSergeev\Core\Lib\SqlHelper;
+use MSergeev\Core\Lib\Tools;
 use MSergeev\Packages\Counters\Tables\ValuesHourlyTable;
 
 class Values
@@ -85,6 +86,9 @@ class Values
 
 		//Получаем текущую тарифную ставку
 		$nowRate = Rates::getLastRate($tariffID);
+
+		//Проверяем правильность указания float значения
+		$value = Tools::validateFloatVal($value);
 
 		//Получаем расход за час
 		$newValue = $value - $sumValue - $nowRate['TARIFF_ID_START_VALUE'];
