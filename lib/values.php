@@ -164,22 +164,30 @@ class Values
 		return self::getCurrentValuesByTariffID($tariffID);
 	}
 
-	private static function getCurrentValuesByTariffID ($tariffID)
+	public static function getCurrentCosts ($tariffCode)
+	{
+		$tariffID = Tariffs::getTariffIDbyCODE($tariffCode);
+
+		return self::getCurrentValuesByTariffID($tariffID, 'SUM_COST');
+	}
+
+	private static function getCurrentValuesByTariffID ($tariffID, $field='SUM_VALUE')
 	{
 		$sqlHelper = new SqlHelper();
 
 		$valuesHourlyTableName = ValuesHourlyTable::getTableName();
 		$query = new Query('select');
-		$sql = "SELECT ".$sqlHelper->getSumFunction("VALUE")." FROM "
+		$sql = "SELECT ".$sqlHelper->getSumFunction("VALUE").", "
+			.$sqlHelper->getSumFunction("COST")." FROM "
 			.$sqlHelper->wrapQuotes($valuesHourlyTableName)." WHERE "
 			.$sqlHelper->wrapQuotes($valuesHourlyTableName)."."
 			.$sqlHelper->wrapQuotes('TARIFF_ID')." = ".$tariffID;
 		$query->setQueryBuildParts($sql);
 		$res = $query->exec();
 		$arRes = $res->fetch();
-		if (isset($arRes['SUM_VALUE']))
+		if (isset($arRes[$field]))
 		{
-			return $arRes['SUM_VALUE'];
+			return $arRes[$field];
 		}
 		else
 		{

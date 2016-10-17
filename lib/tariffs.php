@@ -114,6 +114,7 @@ class Tariffs
 			for ($i=0; $i<count($arRes); $i++)
 			{
 				$arRes[$i]['VALUE'] = round(Values::getCurrentValues($arRes[$i]['CODE']),2);
+				$arRes[$i]['COST'] = round(Values::getCurrentCosts($arRes[$i]['CODE']),2);
 				$arRes[$i]['REAL_VALUE'] = round(($arRes[$i]['VALUE'] - $arRes[$i]['START_VALUE']),2);
 			}
 			return $arRes;
