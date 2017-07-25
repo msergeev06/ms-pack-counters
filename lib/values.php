@@ -81,18 +81,12 @@ class Values
 		}
 		$valuesHourlyTableName = ValuesHourlyTable::getTableName();
 
-		//Получаем предыдущее показание счетчика по данному тарифу, сложив все показания за часы
-		$sumValue = self::getCurrentValuesByTariffID($tariffID);
-
-		//Получаем текущую тарифную ставку
-		$nowRate = Rates::getLastRate($tariffID);
-
 		//Проверяем правильность указания float значения
 		$value = Tools::validateFloatVal($value);
 
 		//Получаем расход за час
-		$newValue = $value - $sumValue - $nowRate['TARIFF_ID_START_VALUE'];
-		if ($newValue<0) $newValue = 0;
+		//$newValue = $value - $sumValue - $nowRate['TARIFF_ID_START_VALUE'];
+		if ($value < 0) $value = 0;
 
 		//Добавляем часовые значения
 		$arInsert = array(
@@ -101,8 +95,8 @@ class Values
 			'DAY' => $day,
 			'MONTH' => $month,
 			'YEAR' => $year,
-			'VALUE' => $newValue,
-			'COST' => ($newValue * $nowRate['VALUE'])
+			'DATE' => $day.'.'.$hour.'.'.$year,
+			'VALUE' => $value
 		);
 		//Проверяем, есть ли данные значения в базе
 		$arRes = ValuesHourlyTable::getList(array(
@@ -112,7 +106,8 @@ class Values
 				'HOUR' => $arInsert['HOUR'],
 				'DAY' => $arInsert['DAY'],
 				'MONTH' => $arInsert['MONTH'],
-				'YEAR' => $arInsert['YEAR']
+				'YEAR' => $arInsert['YEAR'],
+				'DATE' => $arInsert['DATE']
 			)
 		));
 
@@ -171,23 +166,20 @@ class Values
 		return self::getCurrentValuesByTariffID($tariffID, 'SUM_COST');
 	}
 
-	private static function getCurrentValuesByTariffID ($tariffID, $field='SUM_VALUE')
+	private static function getCurrentValuesByTariffID ($tariffID)
 	{
-		$sqlHelper = new SqlHelper();
-
-		$valuesHourlyTableName = ValuesHourlyTable::getTableName();
-		$query = new Query('select');
-		$sql = "SELECT ".$sqlHelper->getSumFunction("VALUE").", "
-			.$sqlHelper->getSumFunction("COST")." FROM "
-			.$sqlHelper->wrapQuotes($valuesHourlyTableName)." WHERE "
-			.$sqlHelper->wrapQuotes($valuesHourlyTableName)."."
-			.$sqlHelper->wrapQuotes('TARIFF_ID')." = ".$tariffID;
-		$query->setQueryBuildParts($sql);
-		$res = $query->exec();
-		$arRes = $res->fetch();
-		if (isset($arRes[$field]))
+		$arRes = ValuesHourlyTable::getList(array(
+			'select' => array('VALUE'),
+			'filter' => array('TARIFF_ID'=>$tariffID),
+			'limit' => 1
+		));
+		if ($arRes && isset($arRes[0]))
 		{
-			return $arRes[$field];
+			$arRes = $arRes[0];
+		}
+		if (isset($arRes['VALUE']))
+		{
+			return $arRes['VALUE'];
 		}
 		else
 		{
@@ -242,57 +234,60 @@ class Values
 		}
 
 		$query = new Query('select');
-		$sqlHelper = new SqlHelper();
-		$valuesHourlyTableName = ValuesHourlyTable::getTableName();
-		$sql = "SELECT ".$sqlHelper->getSumFunction("VALUE")." , ".$sqlHelper->getSumFunction("COST");
+		$sqlHelper = new SqlHelper(ValuesHourlyTable::getTableName());
+		//$valuesHourlyTableName = ValuesHourlyTable::getTableName();
+		$sql = "SELECT\n\t"
+			.$sqlHelper->getMaxFunction("VALUE","VALUE");
 		if ($type=='hourly')
 		{
-			$sql .= " , ".$sqlHelper->wrapQuotes("HOUR");
+			$sql .= " ,\n\t".$sqlHelper->wrapFieldQuotes("HOUR");
 		}
 		if ($type=='hourly' || $type=='daily')
 		{
-			$sql .= " , ".$sqlHelper->wrapQuotes("DAY");
+			$sql .= " ,\n\t".$sqlHelper->wrapFieldQuotes("DAY");
 		}
 		if ($type=='hourly' || $type=='daily' || $type=='monthly')
 		{
-			$sql .= " , ".$sqlHelper->wrapQuotes("MONTH");
+			$sql .= " ,\n\t".$sqlHelper->wrapFieldQuotes("MONTH");
 		}
-		$sql .= " , ".$sqlHelper->wrapQuotes("YEAR");
-		$sql .= " FROM ".$sqlHelper->wrapQuotes($valuesHourlyTableName)." WHERE "
-			.$sqlHelper->wrapQuotes($valuesHourlyTableName)."."
-			.$sqlHelper->wrapQuotes("TARIFF_ID")." =".intval($tariffID);
+		$sql .= " ,\n\t".$sqlHelper->wrapFieldQuotes("YEAR");
+		$sql .= " FROM\n\t"
+			.$sqlHelper->wrapTableQuotes()
+			."\nWHERE\n\t"
+			.$sqlHelper->wrapFieldQuotes("TARIFF_ID")." = ".intval($tariffID);
 
 		if ($type=='hourly')
 		{
-			$sql .= " AND ".$sqlHelper->wrapQuotes($valuesHourlyTableName)."."
-				.$sqlHelper->wrapQuotes("DAY")." =".intval($arDate[0]);
+			$sql .= " AND\n\t"
+				.$sqlHelper->wrapFieldQuotes("DAY")." = ".intval($arDate[0]);
 		}
 		if ($type=='hourly' || $type=='daily')
 		{
-			$sql .= " AND ".$sqlHelper->wrapQuotes($valuesHourlyTableName)."."
-				.$sqlHelper->wrapQuotes("MONTH")." =".intval($arDate[1]);
+			$sql .= " AND\n\t"
+				.$sqlHelper->wrapFieldQuotes("MONTH")." =".intval($arDate[1]);
 		}
 		if ($type=='hourly' || $type=='daily' || $type=='monthly')
 		{
-			$sql .= " AND ".$sqlHelper->wrapQuotes($valuesHourlyTableName)."."
-				.$sqlHelper->wrapQuotes("YEAR")." =".intval($arDate[2]);
+			$sql .= " AND\n\t"
+				.$sqlHelper->wrapFieldQuotes("YEAR")." =".intval($arDate[2]);
 		}
 		if ($type=='hourly')
 		{
-			$sql .= " GROUP BY ".$sqlHelper->wrapQuotes("HOUR")." ";
+			$sql .= "\nGROUP BY\n\t".$sqlHelper->wrapFieldQuotes("HOUR")." ";
 		}
 		elseif ($type=='daily')
 		{
-			$sql .= " GROUP BY ".$sqlHelper->wrapQuotes("DAY")." ";
+			$sql .= "\nGROUP BY\n\t".$sqlHelper->wrapFieldQuotes("DAY")." ";
 		}
 		elseif ($type=='monthly')
 		{
-			$sql .= " GROUP BY ".$sqlHelper->wrapQuotes("MONTH")." ";
+			$sql .= "\nGROUP BY\n\t".$sqlHelper->wrapFieldQuotes("MONTH")." ";
 		}
 		elseif ($type=='yearly')
 		{
-			$sql .= " GROUP BY ".$sqlHelper->wrapQuotes("YEAR")." ";
+			$sql .= "\nGROUP BY\n\t".$sqlHelper->wrapFieldQuotes("YEAR")." ";
 		}
+		msEchoVar($sql);
 
 		$query->setQueryBuildParts($sql);
 		$res = $query->exec();
@@ -302,9 +297,9 @@ class Values
 			$i=0;
 			while($ar_res = $res->fetch())
 			{
+
 				$arResult[$i] = array(
-					'SUM_VALUE' => round($ar_res['SUM_VALUE'],2),
-					'SUM_COST' => round($ar_res['SUM_COST'],2),
+					'VALUE' => round($ar_res['VALUE'],2),
 					'YEAR' => intval($ar_res['YEAR'])
 				);
 				if (isset($ar_res['HOUR']))
@@ -321,6 +316,7 @@ class Values
 				}
 				$i++;
 			}
+			msDebug($arResult);
 
 			return $arResult;
 		}

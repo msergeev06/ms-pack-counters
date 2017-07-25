@@ -52,9 +52,13 @@ class Counters
 			'select' => array('ID'),
 			'filter' => array('CODE'=>$code)
 		));
+		if ($arRes && isset($arRes[0]))
+		{
+			$arRes = $arRes[0];
+		}
 		if ($arRes)
 		{
-			return $arRes[0]['ID'];
+			return $arRes['ID'];
 		}
 		else
 		{
@@ -70,9 +74,13 @@ class Counters
 				'ID' => $counterID
 			)
 		));
+		if ($arRes && isset($arRes[0]))
+		{
+			$arRes = $arRes[0];
+		}
 		if ($arRes)
 		{
-			return $arRes[0];
+			return $arRes;
 		}
 		else
 		{
@@ -88,9 +96,13 @@ class Counters
 				'CODE' => $counterCode
 			)
 		));
+		if ($arRes && isset($arRes[0]))
+		{
+			$arRes = $arRes[0];
+		}
 		if ($arRes)
 		{
-			return $arRes[0];
+			return $arRes;
 		}
 		else
 		{

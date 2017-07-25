@@ -56,9 +56,13 @@ class Rates
 			'order' => array('DATE'=>'DESC'),
 			'limit' => 1
 		));
+		if ($arRes && isset($arRes[0]))
+		{
+			$arRes = $arRes[0];
+		}
 		if ($arRes)
 		{
-			return $arRes[0];
+			return $arRes;
 		}
 		else
 		{

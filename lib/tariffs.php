@@ -16,7 +16,6 @@ class Tariffs
 		'START_VALUE'
 	);
 
-
 	public static function addTariff ($code, $counterID, $startValue=0)
 	{
 		$arRes = TariffsTable::getList(array(
@@ -59,9 +58,13 @@ class Tariffs
 			'select' => array('ID'),
 			'filter' => array('CODE'=>$code)
 		));
+		if ($arRes && isset($arRes[0]))
+		{
+			$arRes = $arRes[0];
+		}
 		if ($arRes)
 		{
-			return $arRes[0]['ID'];
+			return $arRes['ID'];
 		}
 		else
 		{
@@ -75,9 +78,13 @@ class Tariffs
 			'select' => self::$arTariffs,
 			'filter' => array('ID'=>$tariffID)
 		));
+		if ($arRes && isset($arRes[0]))
+		{
+			$arRes = $arRes[0];
+		}
 		if ($arRes)
 		{
-			return $arRes[0];
+			return $arRes;
 		}
 		else
 		{
@@ -91,9 +98,13 @@ class Tariffs
 			'select' => self::$arTariffs,
 			'filter' => array('CODE'=>$tariffCode)
 		));
+		if ($arRes && isset($arRes[0]))
+		{
+			$arRes = $arRes[0];
+		}
 		if ($arRes)
 		{
-			return $arRes[0];
+			return $arRes;
 		}
 		else
 		{

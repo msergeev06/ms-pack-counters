@@ -46,13 +46,13 @@ class ValuesHourlyTable extends DataManager
 				'required' => true,
 				'title' => 'Год получения показаний'
 			)),
+			new Entity\DateField('DATE',array(
+				'title' => 'Дата'
+			)),
 			new Entity\FloatField('VALUE',array(
 				'required' => true,
-				'title' => 'Сколько насчитали за час'
-			)),
-			new Entity\FloatField('COST',array(
-				'required' => true,
-				'title' => 'Стоимость за час'
+				'scale' => 3,
+				'title' => 'Текущие показания'
 			))
 		);
 	}
